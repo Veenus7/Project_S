@@ -2,6 +2,8 @@ import cv2 as cv
 import time as time
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+latest_result = None
+
 def cam_setup():
     cap=cv.VideoCapture(0)
     cap.set(cv.CAP_PROP_FRAME_WIDTH,640)
@@ -37,10 +39,45 @@ def ui(frame):
       cv.putText(frame,"Gesture",(500,50),cv.FONT_HERSHEY_COMPLEX,2,(255,255,255),3,cv.LINE_AA)
       return frame
 
+def save_result(result, output_image, timestamp_ms):
+
+    global latest_result
+    latest_result = result
+
+def mediapipe():
+      base_options=python.BaseOptions(model_asset_path="E:\\VCODES\\Project_S\\model\\hand_landmarker.task")
+      options = vision.HandLandmarkerOptions(
+                  base_options=base_options,
+                  running_mode=vision.RunningMode.LIVE_STREAM,
+                  num_hands=1,
+                  result_callback=save_result
+                   )
+      detector=vision.HandLandmarker.create_from_options(options)
+      return detector
+
+def detection(detector,frame):
+      frame=mp_process(frame)
+      timestamp_ms = int(time.time() * 1000)
+
+      detector.detect_async(frame, timestamp_ms)    
+      return latest_result
+
+def result_process(result):
+      landmarks=result.hand_landmarks
+      handedness=result.handedness
+      return landmarks,handedness
+
+
+def mp_process(frame):
+      rgb=cv.cvtColor(frame,cv.COLOR_BGR2RGB)
+      img=mp.Image=(image_format=mp.ImageFormat.SRGB,data=rgb)
+      return img
 cap=cam_setup()
 p=fps_setup()
+detector=mediapipe()
 while(True):
     frame=read_frame(cap)
+    frame=mp_process(frame)
     p,fps=fps_counter(p)
     frame=ui(frame)
     frame=fps_draw(fps,frame)
