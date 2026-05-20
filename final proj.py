@@ -1,5 +1,6 @@
 import cv2 as cv
 import time as time
+import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 latest_result = None
@@ -13,7 +14,8 @@ def read_frame(cap):
             ret,frame=cap.read()
             if not ret:
                   return None
-            return cv.flip(frame,1)
+            frame=cv.flip(frame,1)
+            return frame
 def cam_release(cap):
     cap.release()
     cv.destroyAllWindows()
@@ -63,24 +65,35 @@ def detection(detector,frame):
       return latest_result
 
 def result_process(result):
+      if not result:
+            return None,None
       landmarks=result.hand_landmarks
       handedness=result.handedness
       return landmarks,handedness
 
 
 def mp_process(frame):
-      rgb=cv.cvtColor(frame,cv.COLOR_BGR2RGB)
-      img=mp.Image=(image_format=mp.ImageFormat.SRGB,data=rgb)
+      rgb = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+      rgb=cv.resize(rgb,(640,480))
+      img =  mp.Image(image_format=mp.ImageFormat.SRGB,data=rgb)
       return img
 cap=cam_setup()
 p=fps_setup()
 detector=mediapipe()
 while(True):
     frame=read_frame(cap)
-    frame=mp_process(frame)
+    print(type(frame))
+    result=detection(detector,frame)
+    landmarks,handedness=result_process(result)
+    print(type(landmarks))
+    print(landmarks)
+    print(type(handedness))
+    print(handedness)
+#     input=mp_process(frame)
+#     frame=ui(frame)
     p,fps=fps_counter(p)
-    frame=ui(frame)
     frame=fps_draw(fps,frame)
+    frame=cv.resize(frame,(640,480))
     cv.imshow("img",frame)
     
     
